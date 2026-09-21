@@ -3,13 +3,21 @@
 A browser-only tool that crops a scan or PDF of an Indian ID card and produces a
 print-ready PDF at exact millimetres.
 
-**Live page:** https://claude.ai/artifact/N94YEEyAFMDu8pibXNxuQi
-
-Unrelated to the thyroid_journal research repo — kept in its own folder deliberately.
+Unrelated to the thyroid_journal research repo — kept separate deliberately.
 
 ## Files
 
-- `id-print-bureau.html` — the whole app. One file, no build step, no dependencies to install.
+- `index.html` — the entire app. One file, no build step, no dependencies to install.
+
+That filename matters: static hosts (Vercel, Netlify, GitHub Pages) serve
+`index.html` at the site root. Any other name gives a 404 on `/`.
+
+## Deploying
+
+Vercel: import the repo, **Framework Preset: Other**, no build command, output
+directory left empty. It is a plain static site — nothing to compile.
+
+Opening `index.html` straight off disk works too; `file://` needs no server.
 
 ## Sizes it produces
 
@@ -41,13 +49,23 @@ Loaded from cdnjs at runtime, not vendored:
 Worker is not allowed, and pdf.js falls back to the main-thread message handler
 when `window.pdfjsWorker` is already defined.
 
-## Editing it
+## Saving
 
-The HTML is a fragment — no `<!doctype>`, `<html>`, `<head>` or `<body>` tags.
-The Claude artifact host wraps it at publish time. Opening the file directly in a
-browser still renders and the cropping works, but the two Save buttons will report
-that saving is unavailable, because they go through the host's save prompt
-(`window.claude.use("downloads")`), which only exists on claude.ai.
+`saveFile()` has two paths. Inside a Claude artifact viewer the host's own save
+prompt takes the blob via `window.claude.use("downloads")`, because that sandbox
+makes `<a download>` inert. Everywhere else — Vercel, any static host, `file://` —
+it falls back to an ordinary anchor download. Both paths are live; do not remove
+either one.
 
-To publish changes to the same URL, republish this file path with the artifact URL
-passed as `url` — publishing without it creates a second, separate artifact.
+## Claude artifact version
+
+The app is also published as a Claude artifact:
+https://claude.ai/artifact/N94YEEyAFMDu8pibXNxuQi
+
+That host wraps the page in its own `<!doctype html>`/`<head>`/`<body>` skeleton,
+so it needs a *fragment* rather than a full document. To regenerate it from
+`index.html`, drop the wrapper: delete the lines above `<title>`, the
+`</head>`/`<body>` pair in the middle, and the closing `</body></html>`. Keep the
+`[hidden]{display:none!important}` rule — the JS toggles `el.hidden` throughout,
+and several of those elements carry a `display` value from a class that would
+otherwise win.
