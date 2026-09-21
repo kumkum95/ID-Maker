@@ -65,6 +65,8 @@ h1{font-size:26px;letter-spacing:-.01em;line-height:1.1}
 .cols{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(290px,1fr);gap:22px;align-items:start}
 @media (max-width:900px){.cols{grid-template-columns:1fr}}
 
+.tabsrow{display:flex;align-items:flex-end;justify-content:space-between;gap:8px 14px;flex-wrap:wrap}
+.tabsrow .btn{margin-bottom:6px}
 .tabs{display:flex;gap:2px;margin-bottom:-1px;position:relative;z-index:2}
 .tab{display:flex;align-items:center;gap:7px;font-family:var(--cond);font-weight:600;font-size:14px;letter-spacing:.02em;padding:8px 16px;background:var(--panel-2);border:1px solid var(--rule);border-bottom-color:transparent;border-radius:6px 6px 0 0;color:var(--ink-2);cursor:pointer}
 .tab[aria-pressed="true"]{background:var(--panel);color:var(--ink)}
@@ -85,6 +87,8 @@ h1{font-size:26px;letter-spacing:-.01em;line-height:1.1}
 .dim{position:absolute;pointer-events:none;font-family:var(--mono);font-size:11px;font-variant-numeric:tabular-nums;color:var(--ink-2);background:var(--panel);border:1px solid var(--rule);border-radius:3px;padding:1px 5px;white-space:nowrap;transform:translate(-50%,0)}
 .dim.vert{transform:translate(-50%,-50%) rotate(-90deg)}
 .chip{position:absolute;left:10px;top:10px;font-family:var(--mono);font-size:10.5px;letter-spacing:.02em;color:var(--ink-2);background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:3px 7px;max-width:calc(100% - 20px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;z-index:2}
+button.chip{cursor:pointer;text-align:left}
+button.chip:hover{border-color:var(--accent);color:var(--accent)}
 .drop{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:20px;background-color:var(--stage);z-index:4}
 .drop h3{font-size:17px}
 .drop p{color:var(--ink-2);font-size:13px;max-width:36ch}
@@ -153,9 +157,15 @@ footer b{color:var(--ink-2);font-weight:500}
 
   <div class="cols">
     <section>
-      <div class="tabs" role="group" aria-label="Card side">
-        <button class="tab" id="tabFront" type="button" aria-pressed="true"><span class="dot"></span>Front</button>
-        <button class="tab" id="tabBack" type="button" aria-pressed="false"><span class="dot"></span>Back</button>
+      <div class="tabsrow">
+        <div class="tabs" role="group" aria-label="Card side">
+          <button class="tab" id="tabFront" type="button" aria-pressed="true"><span class="dot"></span>Front</button>
+          <button class="tab" id="tabBack" type="button" aria-pressed="false"><span class="dot"></span>Back</button>
+        </div>
+        <button class="btn primary sm" id="uploadBtn" type="button">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 11V2.5M4.5 6 8 2.5 11.5 6M2.5 11v2.5h11V11"/></svg>
+          <span id="uploadLabel">Upload front image or PDF</span>
+        </button>
       </div>
 
       <div class="stage" id="stage">
@@ -163,7 +173,7 @@ footer b{color:var(--ink-2);font-weight:500}
         <div class="cwin" id="cwin"><div class="thirds"></div><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
         <div class="dim" id="dimW">85.60 mm</div>
         <div class="dim vert" id="dimH">53.98 mm</div>
-        <div class="chip" id="chip" hidden></div>
+        <button class="chip" id="chip" type="button" hidden></button>
         <div class="drop" id="drop" hidden>
           <h3 id="dropTitle">Drop the card scan here</h3>
           <p id="dropBody">A photo, a screenshot or a PDF &mdash; JPG, PNG, WebP or PDF. You can also paste with Ctrl&#8239;+&#8239;V.</p>
@@ -179,7 +189,6 @@ footer b{color:var(--ink-2);font-weight:500}
           <button class="btn sm" id="rotR" type="button" title="Rotate right 90&deg;">&#8631; 90&deg;</button>
           <button class="btn sm" id="fitBtn" type="button">Fit</button>
           <button class="btn sm" id="fillBtn" type="button">Fill</button>
-          <button class="btn sm" id="replaceBtn" type="button">Replace&hellip;</button>
           <button class="btn sm" id="clearBtn" type="button">Remove</button>
         </div>
       </div>
@@ -697,12 +706,18 @@ function syncSideUI(){
   $("tabBack").classList.toggle("loaded", !!S.back);
   var sd=cur();
   drop.hidden=!!sd;
-  $("dropTitle").textContent = S.side==="front" ? "Drop the card front here" : "Drop the card back here";
+  $("dropTitle").textContent = S.side==="front" ? "Add the card front" : "Add the card back";
   $("dropBody").innerHTML = S.side==="back"
-    ? "Optional. Add it if you want both sides on the sheet &mdash; JPG, PNG, WebP or PDF."
-    : "A photo, a screenshot or a PDF &mdash; JPG, PNG, WebP or PDF. You can also paste with Ctrl&#8239;+&#8239;V.";
+    ? "Optional &mdash; add it only if you want both sides on the sheet. Choose a file, drag one in, or paste with Ctrl&#8239;+&#8239;V."
+    : "Choose a file, drag one onto this panel, or paste with Ctrl&#8239;+&#8239;V. JPG, PNG, WebP or PDF.";
+  $("uploadLabel").textContent = S.side==="front"
+    ? (S.front ? "Replace front image or PDF" : "Upload front image or PDF")
+    : (S.back  ? "Replace back image or PDF"  : "Upload back image or PDF");
   chip.hidden=!sd;
-  if(sd) chip.textContent = sd.sample ? "Sample scan — drop your own file to replace it" : sd.name;
+  if(sd){
+    chip.textContent = sd.sample ? "Sample scan — click to upload your own" : sd.name;
+    chip.title = "Choose a different file";
+  }
   $("arrangeField").hidden = !S.back;
   updatePageNav();
 }
@@ -717,7 +732,8 @@ fileInput.addEventListener("change", function(){
 });
 function pick(){ fileInput.click(); }
 $("dropBtn").addEventListener("click", pick);
-$("replaceBtn").addEventListener("click", pick);
+$("uploadBtn").addEventListener("click", pick);
+$("chip").addEventListener("click", pick);
 $("clearBtn").addEventListener("click", function(){
   S[S.side]=null;
   if(pdfSide===S.side){ pdfDoc=null; }
@@ -727,6 +743,8 @@ $("clearBtn").addEventListener("click", function(){
 $("tabFront").addEventListener("click", function(){ S.side="front"; syncSideUI(); refresh(); });
 $("tabBack").addEventListener("click", function(){ S.side="back"; syncSideUI(); refresh(); });
 
+/* the empty panel itself is a target, not just the button inside it */
+drop.addEventListener("click", function(e){ if(e.target===drop) pick(); });
 stage.addEventListener("dragover", function(e){ e.preventDefault(); stage.classList.add("dragover"); });
 stage.addEventListener("dragleave", function(){ stage.classList.remove("dragover"); });
 stage.addEventListener("drop", function(e){
